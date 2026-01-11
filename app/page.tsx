@@ -1,24 +1,143 @@
-// app/page.tsx
-import { redirect } from "next/navigation";
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, MessageCircle } from "lucide-react";
-
+import { ArrowRight, Loader2, MessageCircle, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { LoginForm } from "@/components/login-form";
-import { createSupabaseServer } from "@/lib/supabase/server";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { validarCodigo, registrarInicio } from "@/services/codigo";
 import { InstallPrompt } from "@/components/install-prompt";
+import { decryptData } from "@/lib/crypto";
 
-export default async function HomePage() {
-  const supabase = await createSupabaseServer();
+export default function HomePage() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    nombre: "",
+    codigo: "",
+  });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  if (user) {
-    redirect("/dashboard");
-  }
+    setLoading(true);
+    try {
+      const text = await file.text();
+      const decrypted = await decryptData(text);
+
+      if (
+        !decrypted ||
+        !decrypted.preguntas ||
+        !Array.isArray(decrypted.preguntas)
+      ) {
+        throw new Error("Formato de archivo inválido");
+      }
+
+      // Store in session storage mimicking the "retry" mechanism
+      sessionStorage.setItem(
+        "session_test_data",
+        JSON.stringify({
+          preguntas: decrypted.preguntas,
+          tipo: decrypted.tipo || "general",
+          area: decrypted.area || null,
+        })
+      );
+
+      toast({
+        title: "Intento cargado",
+        description: "Redirigiendo a tu prueba...",
+      });
+
+      // Redirect with retry flag to force loading from session storage
+      router.push("/prueba?retry=true");
+    } catch (error) {
+      console.error("Error loading file:", error);
+      toast({
+        title: "Error al cargar",
+        description: "El archivo está dañado o no es válido.",
+        variant: "destructive",
+      });
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.nombre.trim() || !formData.codigo.trim()) {
+      toast({
+        title: "Campos requeridos",
+        description: "Por favor ingresa tu nombre y el código de acceso.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // 1. Validar código
+      const intento = await validarCodigo(formData.codigo.trim());
+
+      if (!intento) {
+        toast({
+          title: "Código inválido",
+          description: "El código ingresado no es válido o no existe.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // 2. Registrar inicio (actualizar nombre)
+      const registrado = await registrarInicio(
+        formData.codigo.trim(),
+        formData.nombre.trim()
+      );
+
+      if (!registrado) {
+        toast({
+          title: "Error de registro",
+          description:
+            "Hubo un problema al registrar tu acceso. Intenta nuevamente.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // 3. Guardar sesión local
+      sessionStorage.setItem("user_name", formData.nombre.trim());
+      sessionStorage.setItem("user_code", formData.codigo.trim());
+
+      // 4. Redirigir a la prueba general
+      toast({
+        title: "¡Acceso concedido!",
+        description: "Preparando tu prueba...",
+      });
+
+      router.push("/prueba?tipo=general&download=true");
+    } catch (error) {
+      console.error("Error en login:", error);
+      toast({
+        title: "Error inesperado",
+        description: "Ocurrió un error. Por favor intenta más tarde.",
+        variant: "destructive",
+      });
+      setLoading(false);
+    }
+  };
 
   return (
     <div
@@ -31,113 +150,141 @@ export default async function HomePage() {
     >
       <div className="w-full max-w-md">
         {/* LOGO + TEXTO */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <Image
               src="/logo.png"
               alt="edu-sentri"
-              width={220}
-              height={220}
+              width={180}
+              height={180}
               priority
-              className="drop-shadow-md"
+              className="drop-shadow-2xl"
               loading="eager"
             />
           </div>
-
-          <p className="text-sm text-slate-300">
-            Accede a tu cuenta o prueba nuestro demo gratuito
+          <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-linear-to-r from-white to-slate-300">
+            EDU SENTRI
+          </h1>
+          <p className="text-base text-slate-400 mt-2">
+            Plataforma de Evaluación
           </p>
         </div>
 
-        {/* CARD LOGIN */}
+        {/* CARD ACCESO */}
         <div
           className="
-        rounded-xl
-        bg-white/95 dark:bg-slate-900/90
+        rounded-2xl
+        bg-white/5 dark:bg-slate-900/50
         border border-white/10
-        shadow-xl
-        backdrop-blur-sm
+        shadow-2xl
+        backdrop-blur-md
+        overflow-hidden
       "
         >
-          <div className="p-1 sm:p-4">
-            <LoginForm />
+          <div className="p-6 sm:p-8 space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="nombre" className="text-slate-200">
+                  Nombre Completo
+                </Label>
+                <Input
+                  id="nombre"
+                  name="nombre"
+                  placeholder="Tu nombre y apellido"
+                  value={formData.nombre}
+                  onChange={handleChange}
+                  className="bg-slate-950/50 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="codigo" className="text-slate-200">
+                  Código de Acceso
+                </Label>
+                <Input
+                  id="codigo"
+                  name="codigo"
+                  placeholder="Ingresa tu código"
+                  value={formData.codigo}
+                  onChange={handleChange}
+                  className="bg-slate-950/50 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-blue-500 font-mono tracking-wider"
+                  required
+                />
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full h-11 text-base font-semibold bg-blue-600 hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Verificando...
+                  </>
+                ) : (
+                  <>
+                    Comenzar Prueba
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            </form>
           </div>
         </div>
 
-        {/* ACCIONES */}
-        <div className="mt-6 space-y-3">
-          {/* DEMO */}
-          <Link href="/prueba?tipo=demo">
+        {/* ACCIONES EXTRA */}
+        <div className="mt-8 space-y-4">
+          <InstallPrompt />
+
+          <a
+            href="https://wa.me/59169401617?text=Hola,%20tengo%20problemas%20con%20mi%20código%20de%20acceso."
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block"
+          >
             <Button
               variant="outline"
               className="
-              text-gray-800
               w-full gap-2
-              border-slate-600
-              hover:bg-slate-700/50
-              hover:text-white
+              bg-transparent hover:bg-white/5
+              text-slate-300 hover:text-white
+              border-slate-700/50 hover:border-slate-600
               transition-all
-              mb-4
-              cursor-pointer
             "
             >
-              Prueba Demo
-              <ArrowRight className="w-4 h-4" />
+              <MessageCircle className="w-4 h-4 text-green-500" />
+              Soporte por WhatsApp
             </Button>
-          </Link>
+          </a>
 
-          {/* INSTALAR APP */}
-          <InstallPrompt />
-
-          {/* WHATSAPP */}
-          <div className="flex gap-2 justify-center w-full">
-            <a
-              href="https://wa.me/59175980130?text=Hola,%20quiero%20mas%20información%20sobre%20edu-sentri"
-              target="_blank"
-              rel="noopener noreferrer"
+          <div className="pt-4 border-t border-slate-800/50">
+            <input
+              type="file"
+              id="upload-test"
+              className="hidden"
+              accept=".esl"
+              onChange={handleFileUpload}
+            />
+            <Button
+              variant="ghost"
+              className="w-full text-slate-500 hover:text-slate-300 hover:bg-white/5 text-sm"
+              onClick={() => document.getElementById("upload-test")?.click()}
+              disabled={loading}
             >
-              <Button
-                className="
-              w-full gap-2
-              bg-green-600/90 hover:bg-green-600
-              text-white
-              transition-all
-            "
-              >
-                <MessageCircle className="w-4 h-4" />
-                Contáctanos por WhatsApp
-              </Button>
-            </a>
-            {/* <a
-              href="https://wa.me/59169401617?text=Hola,%20quiero%20mas%20información%20sobre%20edu-sentri."
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button
-                className="
-              w-full gap-2
-              bg-green-600/90 hover:bg-green-600
-              text-white
-              transition-all
-            "
-              >
-                <MessageCircle className="w-4 h-4" />
-                Contáctanos
-              </Button>
-            </a> */}
+              <Upload className="w-4 h-4 mr-2" />
+              Cargar Intento (.esl)
+            </Button>
           </div>
         </div>
-        <div className="mt-12 text-center flex items-center justify-center gap-6 text-xs text-muted-foreground">
-          <Link
-            href="/terminos"
-            className="hover:text-white transition-colors underline-offset-4 hover:underline"
-          >
+
+        {/* FOOTER */}
+        <div className="mt-8 text-center flex items-center justify-center gap-6 text-xs text-slate-500">
+          <Link href="#" className="hover:text-slate-300 transition-colors">
             Términos
           </Link>
-          <Link
-            href="/politicas"
-            className="hover:text-white transition-colors underline-offset-4 hover:underline"
-          >
+          <Link href="#" className="hover:text-slate-300 transition-colors">
             Privacidad
           </Link>
           <span>&copy; 2025 EduSentri</span>

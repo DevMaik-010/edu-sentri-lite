@@ -17,9 +17,10 @@ import {
   Sparkles,
   RotateCcw,
   FileText,
+  Download,
 } from "lucide-react";
-import { guardarIntentoSupabase } from "@/services/intentos";
-import { saveLocalHistory, addToReviewQueue } from "@/lib/local-storage";
+import { addToReviewQueue } from "@/lib/local-storage";
+import { encryptData } from "@/lib/crypto";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -91,9 +92,6 @@ export default function ResultadosPage() {
       localStorage.removeItem("temp_tipo");
       localStorage.removeItem("temp_area");
       localStorage.removeItem("temp_disciplina");
-
-      // Solo guardar en Supabase si es un NUEVO intento (venimos de localStorage)
-      guardarIntento(preguntas, respuestas, tipo, area, disciplina);
     } else if (sessionDataStr) {
       // Caso B: Recarga o navegación (SessionStorage)
       const sessionData = JSON.parse(sessionDataStr);
@@ -158,65 +156,6 @@ export default function ResultadosPage() {
       setTimeout(() => setShowConfetti(true), 500);
     }
   }, [router]);
-
-  // Función separada para guardar solo cuando sea necesario
-  const guardarIntento = async (
-    preguntas: PreguntaUI[],
-    respuestas: RespuestaUsuario[],
-    tipo: string,
-    area?: string | null,
-    disciplina?: string
-  ) => {
-    try {
-      // Recalcular stats simples para el guardado
-      let correctas = 0;
-      preguntas.forEach((p) => {
-        const r = respuestas.find((res) => res.preguntaId === p.id);
-        const oq = p.opciones.find((o) => o.es_correcta);
-        if (r?.respuestaSeleccionada === oq?.clave) correctas++;
-      });
-      const incorrectas = preguntas.length - correctas;
-      const porcentaje = (correctas / preguntas.length) * 100;
-
-      const result = await guardarIntentoSupabase({
-        tipo,
-        totalPreguntas: preguntas.length,
-        correctas,
-        incorrectas,
-        porcentaje,
-        disciplina,
-        preguntas,
-        respuestas,
-      });
-
-      if (result.success && result.intentoId) {
-        // Actualizar el historial local si hubo una mejora
-        if (result.mejorado) {
-          saveLocalHistory({
-            id: result.intentoId,
-            fecha: new Date(),
-            tipo,
-            totalPreguntas: preguntas.length,
-            correctas,
-            incorrectas,
-            porcentaje,
-            disciplina,
-          });
-          console.log(
-            "🎉 ¡Nuevo récord guardado! Has superado tu mejor intento anterior."
-          );
-        } else {
-          console.log("📊 Intento completado. No superó el récord anterior.");
-        }
-      } else if (result.guardadoLocal && !result.success) {
-        console.log(
-          "⚠️ Error guardando en Supabase, pero se guardó localmente."
-        );
-      }
-    } catch (error) {
-      console.error("Error al guardar intento:", error);
-    }
-  };
 
   if (!resultado) {
     return (
@@ -364,6 +303,42 @@ export default function ResultadosPage() {
     router.push(getRetryUrl(retryConfig));
   };
 
+  const handleDownload = async () => {
+    try {
+      const sessionDataStr = sessionStorage.getItem("session_test_data");
+      let dataToEncrypt = null;
+
+      if (sessionDataStr) {
+        dataToEncrypt = JSON.parse(sessionDataStr);
+      } else {
+        // Fallback to local reconstruction if session is gone but we have state (rare)
+        // This relies on state being populated in useEffect
+        // We can reconstruct minimal data needed for "Retry" logic
+        // But better to use what we saved in useEffect into sessionStorage
+        return;
+      }
+
+      if (!dataToEncrypt) return;
+
+      // Ensure timestamp is fresh or preserved
+      dataToEncrypt.timestamp = Date.now();
+
+      const encrypted = await encryptData(dataToEncrypt);
+
+      const blob = new Blob([encrypted], { type: "text/plain" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `resultado_edu_sentri_${Date.now()}.esl`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Error encrypting download:", error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background py-8 sm:py-12 relative overflow-hidden">
       {/* Confetti container (existing logic) */}
@@ -438,24 +413,16 @@ export default function ResultadosPage() {
             <FileText className="mr-2 h-5 w-5" />
             Revisar
           </Button>
-          {retryConfig.tipo !== "demo" && (
-            <Button
-              onClick={() => {
-                if (retryConfig.tipo === "practica") {
-                  handleNewTest();
-                } else {
-                  setShowRestartDialog(true);
-                }
-              }}
-              variant="outline"
-              className="cursor-pointer w-full h-14 sm:h-12 text-base sm:text-sm font-medium border-2 hover:bg-muted/50 hover:border-primary/50 transition-colors"
-            >
-              <RotateCcw className="mr-2 h-5 w-5" />
-              Nueva Prueba
-            </Button>
-          )}
           <Button
-            onClick={() => router.push("/dashboard")}
+            onClick={handleDownload}
+            variant="outline"
+            className="cursor-pointer w-full h-14 sm:h-12 text-base sm:text-sm font-medium border-2 hover:bg-muted/50 transition-colors"
+          >
+            <Download className="mr-2 h-5 w-5" />
+            Descargar
+          </Button>
+          <Button
+            onClick={() => router.push("/")}
             variant="outline"
             className="cursor-pointer w-full h-14 sm:h-12 text-base sm:text-sm font-medium border-2 hover:bg-muted/50 transition-colors"
           >
