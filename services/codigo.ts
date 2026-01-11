@@ -48,7 +48,7 @@ export async function registrarInicio(
 ): Promise<boolean> {
   const { error } = await supabase
     .from("intentos_codigo")
-    .update({ nombre: nombre })
+    .update({ nombre: nombre, valido: false })
     .eq("codigo", codigo);
 
   if (error) {

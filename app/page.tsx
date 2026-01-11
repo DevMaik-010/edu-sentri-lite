@@ -8,14 +8,14 @@ import { ArrowRight, Loader2, MessageCircle, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
 import { validarCodigo, registrarInicio } from "@/services/codigo";
 import { InstallPrompt } from "@/components/install-prompt";
 import { decryptData } from "@/lib/crypto";
 
+import toast from "react-hot-toast";
+
 export default function HomePage() {
   const router = useRouter();
-  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     nombre: "",
@@ -49,20 +49,13 @@ export default function HomePage() {
         })
       );
 
-      toast({
-        title: "Intento cargado",
-        description: "Redirigiendo a tu prueba...",
-      });
+      toast.success("Intento cargado");
 
       // Redirect with retry flag to force loading from session storage
       router.push("/prueba?retry=true");
     } catch (error) {
       console.error("Error loading file:", error);
-      toast({
-        title: "Error al cargar",
-        description: "El archivo está dañado o no es válido.",
-        variant: "destructive",
-      });
+      toast.error("Error al cargar el archivo");
       setLoading(false);
     }
   };
@@ -76,11 +69,7 @@ export default function HomePage() {
     e.preventDefault();
 
     if (!formData.nombre.trim() || !formData.codigo.trim()) {
-      toast({
-        title: "Campos requeridos",
-        description: "Por favor ingresa tu nombre y el código de acceso.",
-        variant: "destructive",
-      });
+      toast.error("Campos requeridos");
       return;
     }
 
@@ -91,11 +80,7 @@ export default function HomePage() {
       const intento = await validarCodigo(formData.codigo.trim());
 
       if (!intento) {
-        toast({
-          title: "Código inválido",
-          description: "El código ingresado no es válido o no existe.",
-          variant: "destructive",
-        });
+        toast.error("Código inválido o ya fue usado.");
         setLoading(false);
         return;
       }
@@ -107,12 +92,7 @@ export default function HomePage() {
       );
 
       if (!registrado) {
-        toast({
-          title: "Error de registro",
-          description:
-            "Hubo un problema al registrar tu acceso. Intenta nuevamente.",
-          variant: "destructive",
-        });
+        toast.error("Error de registro");
         setLoading(false);
         return;
       }
@@ -122,19 +102,12 @@ export default function HomePage() {
       sessionStorage.setItem("user_code", formData.codigo.trim());
 
       // 4. Redirigir a la prueba general
-      toast({
-        title: "¡Acceso concedido!",
-        description: "Preparando tu prueba...",
-      });
+      toast.success("¡Acceso concedido!");
 
       router.push("/prueba?tipo=general&download=true");
     } catch (error) {
       console.error("Error en login:", error);
-      toast({
-        title: "Error inesperado",
-        description: "Ocurrió un error. Por favor intenta más tarde.",
-        variant: "destructive",
-      });
+      toast.error("Error inesperado");
       setLoading(false);
     }
   };
