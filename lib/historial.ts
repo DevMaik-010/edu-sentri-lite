@@ -1,13 +1,6 @@
 import type { IntentoHistorico } from "@/types/pregunta";
-import { obtenerHistorialSupabase } from "@/services/intentos";
 
-/**
- * Obtiene el historial de intentos desde Supabase
- * @deprecated Use obtenerHistorialSupabase directly from services/intentos
- */
-export async function obtenerHistorial(): Promise<IntentoHistorico[]> {
-  return await obtenerHistorialSupabase();
-}
+
 
 export function calcularEstadisticas(historial: IntentoHistorico[]) {
   if (historial.length === 0) {

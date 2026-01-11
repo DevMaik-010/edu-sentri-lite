@@ -162,9 +162,6 @@ export default function HomePage() {
               loading="eager"
             />
           </div>
-          <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-linear-to-r from-white to-slate-300">
-            EDU SENTRI
-          </h1>
           <p className="text-base text-slate-400 mt-2">
             Plataforma de Evaluación
           </p>
@@ -269,7 +266,7 @@ export default function HomePage() {
             />
             <Button
               variant="ghost"
-              className="w-full text-slate-500 hover:text-slate-300 hover:bg-white/5 text-sm"
+              className="w-full text-white hover:text-slate-300 hover:bg-white/5 text-sm border border-white hover:border-white/20 transition-all"
               onClick={() => document.getElementById("upload-test")?.click()}
               disabled={loading}
             >
@@ -287,7 +284,7 @@ export default function HomePage() {
           <Link href="#" className="hover:text-slate-300 transition-colors">
             Privacidad
           </Link>
-          <span>&copy; 2025 EduSentri</span>
+          <span>&copy; 2026 EduSentri</span>
         </div>
       </div>
     </div>

@@ -1,12 +1,10 @@
 // lib/crypto.ts
 
-const SECRET_KEY_MATERIAL = "edu-sentri-lite-secret-key-v1"; // Hardcoded for simplicity in this context
-
 async function getKeyMaterial() {
   const enc = new TextEncoder();
   return window.crypto.subtle.importKey(
     "raw",
-    enc.encode(SECRET_KEY_MATERIAL),
+    enc.encode(process.env.NEXT_PUBLIC_SECRET_KEY_MATERIAL),
     { name: "PBKDF2" },
     false,
     ["deriveBits", "deriveKey"]
@@ -17,7 +15,7 @@ async function getKey(keyMaterial: CryptoKey, salt: Uint8Array) {
   return window.crypto.subtle.deriveKey(
     {
       name: "PBKDF2",
-      salt: salt,
+      salt: salt as any,
       iterations: 100000,
       hash: "SHA-256",
     },
@@ -41,7 +39,7 @@ export async function encryptData(data: any): Promise<string> {
   const encrypted = await window.crypto.subtle.encrypt(
     {
       name: "AES-GCM",
-      iv: iv,
+      iv: iv as any,
     },
     key,
     encodedData
@@ -75,7 +73,7 @@ export async function decryptData(encryptedString: string): Promise<any> {
   const decrypted = await window.crypto.subtle.decrypt(
     {
       name: "AES-GCM",
-      iv: iv,
+      iv: iv as any,
     },
     key,
     ciphertext

@@ -2,7 +2,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Award, Target, BarChart3 } from "lucide-react";
-import { useState, useEffect } from "react";
 import type { IntentoHistorico } from "@/types/pregunta";
 import { calcularEstadisticas } from "@/lib/historial";
 import {
@@ -23,31 +22,6 @@ export function EstadisticasDashboard({
   modo = "pruebas",
 }: EstadisticasDashboardProps) {
   const stats = calcularEstadisticas(historial);
-  const [statsMastery, setStatsMastery] = useState<Record<
-    string,
-    number
-  > | null>(null);
-  const [loadingAreas, setLoadingAreas] = useState(false);
-
-  useEffect(() => {
-    const cargarMastery = async () => {
-      setLoadingAreas(true);
-      if (modo === "pruebas") {
-        const { obtenerEstadisticasMastery } = await import(
-          "@/services/intentos"
-        );
-        const mastery = await obtenerEstadisticasMastery();
-        if (mastery) setStatsMastery(mastery);
-      }
-      setLoadingAreas(false);
-    };
-    cargarMastery();
-  }, [historial, modo]);
-
-  // Sobrescribir promedios con mastery
-  if (modo === "pruebas" && statsMastery) {
-    stats.promediosPorArea = statsMastery;
-  }
 
   // Recalcular Mejor Puntaje
   if (historial.length > 0) {
@@ -178,75 +152,62 @@ export function EstadisticasDashboard({
         }`}
       >
         {/* Estadísticas por Área */}
-        {loadingAreas ? (
-          <Card className="flex items-center justify-center p-12 border-dashed bg-muted/20">
-            <div className="flex flex-col items-center gap-3">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-              <p className="text-sm text-muted-foreground font-medium animate-pulse">
-                Analizando rendimiento por área...
-              </p>
-            </div>
-          </Card>
-        ) : (
-          Object.keys(datosPorArea).length > 0 && (
-            <Card className="overflow-hidden border-slate-200 dark:border-slate-800 shadow-sm">
-              <CardHeader className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 pb-4">
-                <CardTitle className="text-lg font-semibold flex items-center gap-2 text-slate-700 dark:text-slate-200">
-                  <BarChart3 className="w-5 h-5 text-primary/80" />
-                  {tituloPorArea}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {Object.entries(datosPorArea).map(([area, valor]) => {
-                    const Icon =
-                      iconosPorArea[area as keyof typeof iconosPorArea];
-                    const areaColors =
-                      coloresPorArea[area as keyof typeof coloresPorArea];
-                    const textColorClass = getTextColorClass(valor);
-                    const { bg, border } = getBackgroundClasses(valor);
+        {Object.keys(datosPorArea).length > 0 && (
+          <Card className="overflow-hidden border-slate-200 dark:border-slate-800 shadow-sm">
+            <CardHeader className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 pb-4">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                <BarChart3 className="w-5 h-5 text-primary/80" />
+                {tituloPorArea}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {Object.entries(datosPorArea).map(([area, valor]) => {
+                  const Icon =
+                    iconosPorArea[area as keyof typeof iconosPorArea];
+                  const areaColors =
+                    coloresPorArea[area as keyof typeof coloresPorArea];
+                  const textColorClass = getTextColorClass(valor);
+                  const { bg, border } = getBackgroundClasses(valor);
 
-                    return (
-                      <div
-                        key={area}
-                        className={`${bg} border ${border} space-y-3 group p-3.5 rounded-xl hover:shadow-sm transition-all`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
-                            {Icon && (
-                              <div
-                                className="p-1.5 rounded-md bg-white/60 dark:bg-slate-800 shadow-sm"
-                                style={{ color: areaColors?.progressHex }}
-                              >
-                                <Icon className="w-4 h-4" />
-                              </div>
-                            )}
-                            <span className="font-medium text-sm text-slate-700 dark:text-slate-300 truncate">
-                              {area}
-                            </span>
-                          </div>
-                          <span
-                            className={`text-sm font-bold ${textColorClass}`}
-                          >
-                            {valor.toFixed(0)}%
+                  return (
+                    <div
+                      key={area}
+                      className={`${bg} border ${border} space-y-3 group p-3.5 rounded-xl hover:shadow-sm transition-all`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          {Icon && (
+                            <div
+                              className="p-1.5 rounded-md bg-white/60 dark:bg-slate-800 shadow-sm"
+                              style={{ color: areaColors?.progressHex }}
+                            >
+                              <Icon className="w-4 h-4" />
+                            </div>
+                          )}
+                          <span className="font-medium text-sm text-slate-700 dark:text-slate-300 truncate">
+                            {area}
                           </span>
                         </div>
-                        <div className="h-2.5 w-full bg-white/60 dark:bg-slate-800 rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-1000 ease-out"
-                            style={{
-                              width: `${valor}%`,
-                              backgroundColor: areaColors?.progressHex,
-                            }}
-                          />
-                        </div>
+                        <span className={`text-sm font-bold ${textColorClass}`}>
+                          {valor.toFixed(0)}%
+                        </span>
                       </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          )
+                      <div className="h-2.5 w-full bg-white/60 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-1000 ease-out"
+                          style={{
+                            width: `${valor}%`,
+                            backgroundColor: areaColors?.progressHex,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Mejores por Disciplina (Solo modo prácticas) */}
