@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { validarCodigo, registrarInicio } from "@/services/codigo";
+import { clearActiveSession } from "@/lib/local-storage";
 import { InstallPrompt } from "@/components/install-prompt";
 import { decryptData } from "@/lib/crypto";
 
@@ -39,6 +40,10 @@ export default function HomePage() {
         throw new Error("Formato de archivo inválido");
       }
 
+      // Clear any existing active session to force a fresh start
+      clearActiveSession("general", null);
+      sessionStorage.removeItem("timeLeft"); // Clear specific timer if any
+
       // Store in session storage mimicking the "retry" mechanism
       sessionStorage.setItem(
         "session_test_data",
@@ -46,7 +51,8 @@ export default function HomePage() {
           preguntas: decrypted.preguntas,
           tipo: decrypted.tipo || "general",
           area: decrypted.area || null,
-        })
+          tiempoRestante: 7200, // Reset timer to 2 hours
+        }),
       );
 
       toast.success("Intento cargado");
@@ -88,7 +94,7 @@ export default function HomePage() {
       // 2. Registrar inicio (actualizar nombre)
       const registrado = await registrarInicio(
         formData.codigo.trim(),
-        formData.nombre.trim()
+        formData.nombre.trim(),
       );
 
       if (!registrado) {

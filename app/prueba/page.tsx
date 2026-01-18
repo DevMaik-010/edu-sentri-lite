@@ -5,7 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { RespuestaUsuario, PreguntaUI } from "@/types/pregunta";
 import { QuestionCard } from "@/components/question-card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, CheckCircle, Grid3x3 } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle,
+  Grid3x3,
+  Eye,
+  BookOpen,
+} from "lucide-react";
 import { obtenerPreguntasGenerales } from "@/services/preguntas";
 import { encryptData } from "@/lib/crypto";
 import { LoadingLottie } from "@/components/loading-lottie";
@@ -26,8 +33,80 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
-import { Eye, BookOpen } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+
+// Theme Configuration
+type TimeTheme = "morning" | "afternoon" | "night";
+
+const THEMES = {
+  morning: {
+    background: "bg-[#EAF6FF]", // Fallback
+    pattern: "cross-grid",
+    style: {
+      backgroundImage: `
+        linear-gradient(90deg, transparent 48%, rgba(126, 200, 227, 0.25) 48%, rgba(126, 200, 227, 0.25) 52%, transparent 52%),
+        linear-gradient(transparent 48%, rgba(126, 200, 227, 0.25) 48%, rgba(126, 200, 227, 0.25) 52%, transparent 52%)
+      `,
+      backgroundSize: "30px 30px",
+      backgroundColor: "#EAF6FF",
+    },
+    accent: "text-[#0284C7]", // Darker blue for text readability
+    accentBorder: "border-[#7EC8E3]",
+    glass: "bg-white/60 backdrop-blur-md border border-white/60 shadow-lg",
+    text: "text-slate-800",
+    button:
+      "bg-gradient-to-r from-[#38BDF8] to-[#0284C7] text-white hover:opacity-90 shadow-md transform transition-all duration-200 hover:scale-[1.02]",
+    buttonOutline:
+      "border-[#0284C7] text-[#0284C7] hover:bg-[#0284C7]/10 bg-white/40 backdrop-blur-sm",
+    progress: "bg-[#0284C7]",
+    progressBg: "bg-[#7EC8E3]/20",
+  },
+  afternoon: {
+    background: "bg-[#FFF1E6]", // Fallback
+    pattern: "cross-grid",
+    style: {
+      backgroundImage: `
+        linear-gradient(90deg, transparent 48%, rgba(255, 214, 165, 0.25) 48%, rgba(255, 214, 165, 0.25) 52%, transparent 52%),
+        linear-gradient(transparent 48%, rgba(255, 214, 165, 0.25) 48%, rgba(255, 214, 165, 0.25) 52%, transparent 52%)
+      `,
+      backgroundSize: "30px 30px",
+      backgroundColor: "#FFF1E6",
+    },
+    accent: "text-[#D97706]", // Darker orange for text
+    accentBorder: "border-[#FF9F68]",
+    glass: "bg-white/60 backdrop-blur-md border border-white/60 shadow-lg",
+    text: "text-amber-950",
+    button:
+      "bg-gradient-to-r from-[#F97316] to-[#EA580C] text-white hover:opacity-90 shadow-md transform transition-all duration-200 hover:scale-[1.02]",
+    buttonOutline:
+      "border-[#EA580C] text-[#EA580C] hover:bg-[#EA580C]/10 bg-white/40 backdrop-blur-sm",
+    progress: "bg-[#EA580C]",
+    progressBg: "bg-[#FF9F68]/20",
+  },
+  night: {
+    background: "bg-[#0F172A]", // Fallback
+    pattern: "cross-grid",
+    style: {
+      backgroundImage: `
+        linear-gradient(90deg, transparent 48%, rgba(56, 189, 248, 0.1) 48%, rgba(56, 189, 248, 0.1) 52%, transparent 52%),
+        linear-gradient(transparent 48%, rgba(56, 189, 248, 0.1) 48%, rgba(56, 189, 248, 0.1) 52%, transparent 52%)
+      `,
+      backgroundSize: "30px 30px",
+      backgroundColor: "#0F172A",
+    },
+    accent: "text-[#38BDF8]",
+    accentBorder: "border-[#38BDF8]",
+    glass: "bg-[#1E293B]/70 backdrop-blur-md border border-white/10 shadow-xl",
+    text: "text-[#E5E7EB]",
+    button:
+      "bg-gradient-to-r from-[#38BDF8] to-[#0284C7] text-white hover:opacity-90 shadow-[0_0_15px_rgba(56,189,248,0.3)] transform transition-all duration-200 hover:scale-[1.02]",
+    buttonOutline:
+      "border-[#38BDF8] text-[#38BDF8] hover:bg-[#38BDF8]/10 bg-slate-900/40 backdrop-blur-sm",
+    progress: "bg-[#38BDF8]",
+    progressBg: "bg-[#38BDF8]/20",
+  },
+};
 
 export default function PruebaPage() {
   const router = useRouter();
@@ -37,6 +116,18 @@ export default function PruebaPage() {
   const [preguntaActual, setPreguntaActual] = useState(0);
   const [respuestas, setRespuestas] = useState<RespuestaUsuario[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Theme State
+  const [currentTheme, setCurrentTheme] = useState<TimeTheme>("morning");
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour >= 6 && hour < 12) setCurrentTheme("morning");
+    else if (hour >= 12 && hour < 19) setCurrentTheme("afternoon");
+    else setCurrentTheme("night");
+  }, []);
+
+  const theme = THEMES[currentTheme];
 
   // States for reading comprehension text
   const [showTextoDialog, setShowTextoDialog] = useState(false);
@@ -57,7 +148,7 @@ export default function PruebaPage() {
       newPreguntas: PreguntaUI[],
       newRespuestas: RespuestaUsuario[],
       newIndex: number,
-      newTimeLeft: number
+      newTimeLeft: number,
     ) => {
       saveActiveSession({
         tipo: "general",
@@ -69,7 +160,7 @@ export default function PruebaPage() {
         timestamp: Date.now(),
       });
     },
-    []
+    [],
   );
 
   // Save timer every 10 seconds to avoid excessive writing
@@ -120,6 +211,30 @@ export default function PruebaPage() {
     const cargarPreguntas = async () => {
       setLoading(true);
 
+      const isRetry = searchParams.get("retry") === "true";
+
+      // 0. Si es Retry (ej. carga de archivo), priorizar sessionStorage
+      if (isRetry) {
+        const sessionData = sessionStorage.getItem("session_test_data");
+        if (sessionData) {
+          try {
+            const parsed = JSON.parse(sessionData);
+            setPreguntas(parsed.preguntas);
+            setRespuestas([]); // Reset respuestas
+            setPreguntaActual(0); // Reset index
+            setTimeLeft(parsed.tiempoRestante || 7200); // Reset time (default 2h)
+
+            // Limpiar sesión local antigua para evitar conflictos
+            clearActiveSession("general", null);
+
+            setLoading(false);
+            return;
+          } catch (e) {
+            console.error("Error parsing session data", e);
+          }
+        }
+      }
+
       // 1. Intentar cargar sesión activa (continuar donde se dejó)
       // Siempre buscamos sesión "general"
       const session = getActiveSession("general", null);
@@ -140,7 +255,7 @@ export default function PruebaPage() {
         const preguntasCargadas = await obtenerPreguntasGenerales();
         setPreguntas(preguntasCargadas);
         // Default General: 2h
-        const initialTime = 7200;
+        const initialTime = 7200; // 2 horas en segundos 7200, 1 min 60
 
         setTimeLeft(initialTime);
         persistSession(preguntasCargadas, [], 0, initialTime);
@@ -176,7 +291,7 @@ export default function PruebaPage() {
         }
 
         const texto = await obtenerTextoLecturaPorId(
-          currentPregunta.texto_lectura_id!
+          currentPregunta.texto_lectura_id!,
         );
         if (texto) {
           setTextoActual(texto);
@@ -192,7 +307,7 @@ export default function PruebaPage() {
   const handleSeleccionarRespuesta = (respuesta: string) => {
     const preguntaId = preguntas[preguntaActual].id;
     const respuestasActualizadas = respuestas.filter(
-      (r) => r.preguntaId !== preguntaId
+      (r) => r.preguntaId !== preguntaId,
     );
     respuestasActualizadas.push({
       preguntaId,
@@ -298,28 +413,48 @@ export default function PruebaPage() {
   }
 
   const respuestaActual = respuestas.find(
-    (r) => r.preguntaId === preguntas[preguntaActual].id
+    (r) => r.preguntaId === preguntas[preguntaActual].id,
   )?.respuestaSeleccionada;
   const mostrarRespuesta = false;
 
   return (
-    <div className="bg-background min-h-screen flex flex-col">
+    <div
+      className={cn(
+        "min-h-screen flex flex-col transition-colors duration-1000",
+        theme.background,
+      )}
+      style={theme.style}
+    >
       <div className="container h-screen mx-auto px-4 py-4 sm:py-8 flex flex-col">
         {/* 🔝 PROGRESO (FIJO ARRIBA) */}
         <div className=" sm:mb-6 animate-in fade-in slide-in-from-top-1 duration-500 shrink-0">
           <div className="flex flex-col gap-2">
             <div
-              className={`text-center font-mono font-bold text-xl ${
-                timeLeft < 300 ? "text-red-500 animate-pulse" : "text-primary"
+              className={`text-center font-mono font-bold text-xl drop-shadow-sm ${
+                timeLeft < 300 ? "text-red-500 animate-pulse" : theme.text
               }`}
             >
               {formatTime(timeLeft)}
             </div>
             {/* PROGRESO */}
-            <div className="mb-4 sm:mb-6 shrink-0">
-              <Progress value={progreso} className="h-2" />
+            <div
+              className={cn(
+                "mb-4 sm:mb-6 shrink-0 rounded-2xl p-4 transition-all duration-300",
+                theme.glass,
+              )}
+            >
+              <Progress
+                value={progreso}
+                className={cn("h-2.5", theme.progressBg)}
+                indicatorClassName={theme.progress}
+              />
 
-              <div className="flex justify-between mt-1 text-sm text-muted-foreground items-center">
+              <div
+                className={cn(
+                  "flex justify-between mt-2 text-sm font-medium items-center",
+                  theme.text,
+                )}
+              >
                 <span>Pregunta {currentIndex + 1}</span>
                 {/* Botón ver texto individual si la pregunta lo requiere */}
                 {preguntas[preguntaActual]?.texto_lectura_id && (
@@ -328,8 +463,12 @@ export default function PruebaPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => setShowTextoDialog(true)}
-                      className="h-6 sm:h-8 gap-2 text-purple-600 border-purple-600 hover:bg-purple-200/70 hover:text-purple-600
-                        hover:border-purple-600 transition-colors text-xs font-medium cursor-pointer"
+                      className={cn(
+                        "h-6 sm:h-8 gap-2 border text-xs font-semibold shadow-none",
+                        theme.accentBorder,
+                        theme.accent,
+                        "hover:bg-white/20 bg-transparent",
+                      )}
                     >
                       <Eye className="w-4 h-4" />
                       Ver Texto
@@ -355,6 +494,8 @@ export default function PruebaPage() {
             respuestaSeleccionada={respuestaActual}
             onSeleccionarRespuesta={handleSeleccionarRespuesta}
             mostrarRespuesta={mostrarRespuesta}
+            theme={currentTheme}
+            themeClasses={theme}
           />
         </div>
 
@@ -365,9 +506,14 @@ export default function PruebaPage() {
             size="lg"
             onClick={handleAnterior}
             disabled={preguntaActual === 0}
-            className="gap-2 bg-card h-12 transition-all duration-200 hover:scale-102 flex-1"
+            className={cn(
+              "gap-2 h-12 transition-all duration-200 hover:scale-102 flex-1 font-semibold border cursor-pointer",
+              theme.buttonOutline,
+              preguntaActual === 0 &&
+                "opacity-50 cursor-not-allowed hover:scale-100",
+            )}
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-5 h-5" />
             <span className="hidden sm:inline">Anterior</span>
             <span className="sm:hidden">Atrás</span>
           </Button>
@@ -376,9 +522,12 @@ export default function PruebaPage() {
             variant="outline"
             size="lg"
             onClick={() => setShowNavigatorDialog(true)}
-            className="gap-2 bg-card h-12 transition-all duration-200 hover:scale-102 border-primary/50 text-primary hover:bg-primary/10 cursor-pointer max-w-14"
+            className={cn(
+              "gap-2 h-12 transition-all duration-200 hover:scale-102 border cursor-pointer max-w-14",
+              theme.buttonOutline,
+            )}
           >
-            <Grid3x3 className="w-4 h-4" />
+            <Grid3x3 className="w-5 h-5" />
           </Button>
 
           {preguntaActual === preguntas.length - 1 ? (
@@ -386,9 +535,12 @@ export default function PruebaPage() {
               size="lg"
               onClick={handleFinalizar}
               disabled={respuestas.length !== preguntas.length}
-              className="gap-2 h-12 transition-all duration-200 hover:scale-102 flex-1"
+              className={cn(
+                "gap-2 h-12 flex-1 font-bold tracking-wide border-0 cursor-pointer",
+                theme.button,
+              )}
             >
-              <CheckCircle className="w-4 h-4" />
+              <CheckCircle className="w-5 h-5" />
               <span className="hidden sm:inline">Finalizar Prueba</span>
               <span className="sm:hidden">Finalizar</span>
             </Button>
@@ -396,11 +548,14 @@ export default function PruebaPage() {
             <Button
               size="lg"
               onClick={handleSiguiente}
-              className="gap-2 h-12 transition-all duration-200 hover:scale-102 flex-1"
+              className={cn(
+                "gap-2 h-12 flex-1 font-bold tracking-wide border-0 cursor-pointer",
+                theme.button,
+              )}
             >
               <span className="hidden sm:inline">Siguiente</span>
               <span className="sm:hidden">Continuar</span>
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-5 h-5" />
             </Button>
           )}
         </div>
@@ -408,11 +563,11 @@ export default function PruebaPage() {
         {/* ℹ️ ESTADO */}
         <div className="mt-3 sm:mt-4 text-center shrink-0">
           {respuestas.length === preguntas.length ? (
-            <p className="text-xs sm:text-sm font-medium text-green-600 dark:text-green-400 animate-in fade-in duration-500">
+            <p className="text-xs sm:text-sm font-semibold text-green-600 dark:text-green-400 animate-in fade-in duration-500 bg-green-100/80 dark:bg-green-900/40 px-3 py-1 rounded-full inline-block backdrop-blur-sm">
               ✓ ¡Has respondido todas las preguntas! Puedes finalizar.
             </p>
           ) : (
-            <p className="text-xs sm:text-sm text-muted-foreground">
+            <p className={cn("text-xs sm:text-sm opacity-80", theme.text)}>
               {respuestas.length} de {preguntas.length} respondidas
             </p>
           )}
@@ -421,10 +576,10 @@ export default function PruebaPage() {
 
       {/* AlertDialog para mostrar texto de lectura */}
       <AlertDialog open={showTextoDialog} onOpenChange={setShowTextoDialog}>
-        <AlertDialogContent className="max-h-[90vh] min-w-[60vw] max-w-[90vw] overflow-hidden flex flex-col">
+        <AlertDialogContent className="max-h-[90vh] min-w-[60vw] max-w-[90vw] overflow-hidden flex flex-col bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-white/20">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-primary" />
+            <AlertDialogTitle className="flex items-center gap-2 text-xl">
+              <BookOpen className="w-6 h-6 text-primary" />
               {textoActual?.titulo || "Texto de Lectura"}
             </AlertDialogTitle>
             <AlertDialogDescription className="sr-only">
@@ -494,7 +649,7 @@ export default function PruebaPage() {
         open={showNavigatorDialog}
         onOpenChange={setShowNavigatorDialog}
       >
-        <AlertDialogContent className="max-w-[80vw] max-h-[80vh] overflow-hidden flex flex-col">
+        <AlertDialogContent className="max-w-[80vw] max-h-[80vh] overflow-hidden flex flex-col bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-white/20">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <Grid3x3 className="w-5 h-5 text-primary" />
@@ -510,7 +665,7 @@ export default function PruebaPage() {
             <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 m-2">
               {preguntas.map((pregunta, index) => {
                 const isAnswered = respuestas.some(
-                  (r) => r.preguntaId === pregunta.id
+                  (r) => r.preguntaId === pregunta.id,
                 );
                 const isCurrent = index === preguntaActual;
 
@@ -518,17 +673,17 @@ export default function PruebaPage() {
                   <button
                     key={pregunta.id}
                     onClick={() => handleGoToQuestion(index)}
-                    className={`relative aspect-square rounded-lg border-2 flex items-center justify-center font-bold text-sm transition-all hover:scale-110 ${
+                    className={`relative aspect-square rounded-xl border flex items-center justify-center font-bold text-sm transition-all hover:scale-110 shadow-sm ${
                       isCurrent
                         ? "border-primary bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2"
                         : isAnswered
-                        ? "border-green-500 bg-green-500 text-white hover:bg-green-600"
-                        : "border-orange-400 bg-orange-50 text-orange-700 hover:bg-orange-100"
+                          ? "border-green-500 bg-green-500 text-white hover:bg-green-600"
+                          : "border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100"
                     } cursor-pointer`}
                   >
                     {index + 1}
                     {!isAnswered && !isCurrent && (
-                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full border-2 border-white"></span>
+                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full border-2 border-white shadow-sm"></span>
                     )}
                   </button>
                 );
@@ -541,7 +696,7 @@ export default function PruebaPage() {
               <span>Resp. ({respuestas.length})</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded bg-orange-50 border-2 border-orange-400 relative">
+              <div className="w-6 h-6 rounded bg-orange-50 border-2 border-orange-200 relative">
                 <span className="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full"></span>
               </div>
               <span>Sin resp. ({preguntas.length - respuestas.length})</span>

@@ -13,6 +13,7 @@ import {
   Plus,
   Minus,
   RotateCcw,
+  BookOpen,
 } from "lucide-react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import {
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 interface QuestionCardProps {
   pregunta: PreguntaUI;
@@ -35,6 +37,8 @@ interface QuestionCardProps {
   onSeleccionarRespuesta?: (respuesta: string) => void;
   mostrarRespuesta?: boolean;
   mostrarCorrecta?: boolean;
+  theme?: "morning" | "afternoon" | "night";
+  themeClasses?: Record<string, any>;
 }
 
 type ColoresPorArea = {
@@ -42,30 +46,30 @@ type ColoresPorArea = {
 };
 
 const coloresPorArea: ColoresPorArea = {
-  "Razonamiento Lógico": "bg-blue-600 text-white",
-  "Conocimientos Generales": "bg-green-600 text-white",
-  "Comprensión Lectora": "bg-violet-600 text-white",
-  "Habilidades Socioemocionales": "bg-pink-600 text-white",
-  Default: "bg-blue-600 text-black",
+  "Razonamiento Lógico": "bg-blue-600/90 text-white backdrop-blur-sm",
+  "Conocimientos Generales": "bg-green-600/90 text-white backdrop-blur-sm",
+  "Comprensión Lectora": "bg-violet-600/90 text-white backdrop-blur-sm",
+  "Habilidades Socioemocionales": "bg-pink-600/90 text-white backdrop-blur-sm",
+  Default: "bg-blue-600/90 text-white backdrop-blur-sm",
 };
 
 const coloresPorDisciplina: ColoresPorArea = {
-  "Identificación de Patrones": "bg-blue-100 text-blue-700",
-  "Series Numéricas": "bg-blue-100 text-blue-700",
-  "Problemas Lógicos": "bg-blue-100 text-blue-700",
-  Biología: "bg-green-100 text-green-700",
-  Química: "bg-emerald-100 text-emerald-700",
-  Física: "bg-cyan-100 text-cyan-700",
+  "Identificación de Patrones": "bg-blue-100/50 text-blue-700 border-blue-200",
+  "Series Numéricas": "bg-blue-100/50 text-blue-700 border-blue-200",
+  "Problemas Lógicos": "bg-blue-100/50 text-blue-700 border-blue-200",
+  Biología: "bg-green-100/50 text-green-700 border-green-200",
+  Química: "bg-emerald-100/50 text-emerald-700 border-emerald-200",
+  Física: "bg-cyan-100/50 text-cyan-700 border-cyan-200",
 
-  Historia: "bg-amber-100 text-amber-700",
-  Geografía: "bg-orange-100 text-orange-700",
-  Filosofia: "bg-indigo-100 text-indigo-700",
+  Historia: "bg-amber-100/50 text-amber-700 border-amber-200",
+  Geografía: "bg-orange-100/50 text-orange-700 border-orange-200",
+  Filosofia: "bg-indigo-100/50 text-indigo-700 border-indigo-200",
 
-  Lenguaje: "bg-violet-100 text-violet-700",
+  Lenguaje: "bg-violet-100/50 text-violet-700 border-violet-200",
 
-  "Técnica Tecnológica": "bg-yellow-100 text-yellow-800",
+  "Técnica Tecnológica": "bg-yellow-100/50 text-yellow-800 border-yellow-200",
 
-  Default: "bg-gray-100 text-black",
+  Default: "bg-gray-100/50 text-black border-gray-200",
 };
 
 export function QuestionCard({
@@ -77,6 +81,8 @@ export function QuestionCard({
   onSeleccionarRespuesta,
   mostrarRespuesta = false,
   mostrarCorrecta = false,
+  theme = "morning",
+  themeClasses,
 }: QuestionCardProps) {
   const handleChange = (value: string) => {
     if (onRespuesta) onRespuesta(value);
@@ -110,76 +116,120 @@ export function QuestionCard({
 
   return (
     <Card
-      className={`flex gap-2 flex-col h-full border-2 p-0 pb-2 transition-all duration-300 ${
-        mostrar && esCorrecta
-          ? "border-green-500 bg-green-50/50 dark:bg-green-950/20"
-          : ""
-      }`}
+      className={cn(
+        "flex gap-2 flex-col h-full p-0 pb-2 transition-all duration-300 border-0 shadow-none bg-transparent",
+      )}
     >
-      <div className="overflow-y-auto h-full scrollbar-hide">
+      <div className="overflow-y-auto h-full scrollbar-hide rounded-2xl">
         {/* 🔝 HEADER (FIJO) */}
-        <CardHeader className="m-0 p-0 shrink-0">
+        <CardHeader
+          className={cn(
+            "m-0 p-0 shrink-0 pb-6 rounded-2xl shadow-sm border transition-colors duration-500",
+            themeClasses?.glass ||
+              "bg-white/40 backdrop-blur-md border-white/50",
+          )}
+        >
           <div
             className={`flex items-center justify-center ${
               coloresPorArea[pregunta.componentes?.nombre || "Default"]
-            } rounded-t-lg h-10 text-black font-bold`}
+            } rounded-t-2xl h-10 font-bold shadow-sm tracking-wide text-sm`}
           >
             {pregunta.componentes?.nombre?.toUpperCase()}
           </div>
 
           {numeroActual && total && (
-            <div className="flex items-center justify-between px-5 mt-1">
-              <span className="text-xs font-medium text-muted-foreground">
-                Pregunta {numeroActual} de {total}
+            <div className="flex items-center justify-between px-6 mt-4">
+              <span
+                className={cn(
+                  "text-xs font-semibold uppercase tracking-wider opacity-70",
+                  themeClasses?.text,
+                )}
+              >
+                Pregunta {numeroActual} / {total}
               </span>
               <span
-                className={`text-xs px-2 sm:px-3 py-1 ${
+                className={`text-xs px-3 py-1 border ${
                   coloresPorDisciplina[
                     pregunta.disciplinas?.nombre || "Default"
                   ]
-                } rounded-full w-fit`}
+                } rounded-full w-fit font-medium backdrop-blur-sm shadow-sm`}
               >
                 {pregunta.disciplinas?.nombre}
               </span>
             </div>
           )}
 
-          <h2 className="text-lg sm:text-xl font-semibold leading-relaxed px-5 mt-2">
+          <h2
+            className={cn(
+              "text-lg sm:text-xl font-bold leading-relaxed px-6 mt-3",
+              themeClasses?.text,
+            )}
+          >
             {pregunta.num_pregunta}. {pregunta.enunciado}
           </h2>
         </CardHeader>
 
         {/* 🧠 CONTENIDO (SCROLL INTERNO) */}
-        <CardContent className="px-5 pb-4 mt-4">
+        <CardContent className="px-1 sm:px-2 pt-4 pb-4">
           <RadioGroup
             value={respuestaSeleccionada ?? ""}
             onValueChange={handleChange}
-            className="space-y-2 sm:space-y-3"
+            className="space-y-3 sm:space-y-4"
           >
             {opcionesBarajadas.map((opcion, index) => {
               const esSeleccionada = respuestaSeleccionada === opcion.clave;
 
-              // Si NO se deben mostrar respuestas, usar estilo neutro
+              // Si NO se deben mostrar respuestas, usar estilo neutro con Glassmorphism
               if (!mostrar) {
                 return (
                   <div
                     key={index}
-                    className={`flex items-center space-x-3 p-3 sm:p-4 rounded-lg border-2 cursor-pointer transition-all duration-300 ${
+                    className={cn(
+                      " group relative flex items-center space-x-3 p-4 rounded-xl border transition-all duration-300 cursor-pointer overflow-hidden backdrop-blur-sm",
                       esSeleccionada
-                        ? "border-primary bg-primary/10"
-                        : "border-border hover:border-primary/50 hover:bg-secondary/50"
-                    }`}
+                        ? cn(
+                            themeClasses?.glass,
+                            "ring-1 ring-offset-0",
+                          )
+                        : "bg-white border-slate-400 hover:bg-white/60 hover:border-slate-600 hover:shadow-sm",
+                    )}
                   >
+                    {/* Background indicator for selection */}
+                    {esSeleccionada && (
+                      <div
+                        className={cn(
+                          "absolute inset-0 opacity-10",
+                          themeClasses?.glass,
+                        )}
+                      />
+                    )}
+
                     <RadioGroupItem
                       value={opcion.clave}
                       id={`opcion-${index}`}
-                      className="shrink-0"
+                      className={cn(
+                        "shrink-0 z-10 border-[1.5px] size-5",
+                        esSeleccionada
+                          ? cn(themeClasses?.accentBorder, "border-2")
+                          : "border-slate-400 dark:border-slate-500",
+                      )}
                     />
                     <Label
                       htmlFor={`opcion-${index}`}
-                      className={`flex-1 cursor-pointer text-sm sm:text-base leading-relaxed ${
-                        esSeleccionada ? "font-semibold text-primary" : ""
-                      }`}
+                      className={cn(
+                        "flex-1 cursor-pointer text-sm sm:text-base leading-relaxed z-10 transition-all",
+                        esSeleccionada
+                          ? cn(
+                              "font-bold",
+                              theme === "night"
+                                ? "text-slate-100"
+                                : "text-slate-800",
+                            )
+                          : "font-medium text-slate-700 dark:text-slate-300",
+                        theme === "night" &&
+                          !esSeleccionada &&
+                          "text-slate-300",
+                      )}
                     >
                       {opcion.texto}
                     </Label>
@@ -196,13 +246,14 @@ export function QuestionCard({
               return (
                 <div
                   key={index}
-                  className={`flex items-center space-x-3 p-3 sm:p-4 rounded-lg border-2 cursor-pointer transition-all duration-300 ${
+                  className={cn(
+                    "flex items-center space-x-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 backdrop-blur-sm",
                     seleccion_correcta
-                      ? "border-green-500 bg-green-50 dark:bg-green-950/20"
+                      ? "border-green-500 bg-green-50/80 dark:bg-green-950/40"
                       : seleccion_incorrecta
-                      ? "border-red-500 bg-red-50 dark:bg-red-950/20"
-                      : "border-border hover:border-primary/50 hover:bg-secondary/50"
-                  }`}
+                        ? "border-red-500 bg-red-50/80 dark:bg-red-950/40"
+                        : "border-transparent bg-white/40 hover:bg-white/60",
+                  )}
                 >
                   <RadioGroupItem
                     value={opcion.clave}
@@ -212,21 +263,22 @@ export function QuestionCard({
                   />
                   <Label
                     htmlFor={`opcion-${index}`}
-                    className={`flex-1 cursor-pointer text-sm sm:text-base leading-relaxed ${
+                    className={cn(
+                      "flex-1 cursor-pointer text-sm sm:text-base leading-relaxed font-medium",
                       seleccion_correcta
-                        ? "font-semibold text-green-700 dark:text-green-400"
+                        ? "text-green-700 dark:text-green-400 font-bold"
                         : seleccion_incorrecta
-                        ? "font-semibold text-red-700 dark:text-red-400"
-                        : ""
-                    }`}
+                          ? "text-red-700 dark:text-red-400 font-bold"
+                          : "text-slate-700 dark:text-slate-300",
+                    )}
                   >
                     {opcion.texto}
                   </Label>
                   {seleccion_correcta && (
-                    <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+                    <CheckCircle2 className="w-6 h-6 text-green-600 shrink-0 drop-shadow-sm" />
                   )}
                   {seleccion_incorrecta && (
-                    <XCircle className="w-5 h-5 text-red-600 shrink-0" />
+                    <XCircle className="w-6 h-6 text-red-600 shrink-0 drop-shadow-sm" />
                   )}
                 </div>
               );
@@ -234,10 +286,10 @@ export function QuestionCard({
           </RadioGroup>
 
           {mostrar && !esCorrecta && (
-            <div className="mt-4 p-4 bg-green-50 dark:bg-green-950/20 border-l-4 border-green-500 rounded animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="mt-6 p-5 bg-green-50/90 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-xl animate-in fade-in slide-in-from-top-2 duration-300 shadow-sm backdrop-blur-md">
               <p className="text-sm font-medium text-green-800 dark:text-green-400">
                 Respuesta correcta:{" "}
-                <span className="font-bold">
+                <span className="font-bold text-base block mt-1">
                   {pregunta.opciones.find((o) => o.es_correcta)?.texto}
                 </span>
               </p>
@@ -247,11 +299,11 @@ export function QuestionCard({
           {mostrar && (
             <div className="mt-4 space-y-4">
               {pregunta.sustento && (
-                <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border-l-4 border-blue-500 rounded animate-in fade-in slide-in-from-top-2 duration-300">
-                  <p className="text-sm font-medium text-blue-800 dark:text-blue-400 mb-1">
-                    Explicación:
+                <div className="p-5 bg-blue-50/90 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl animate-in fade-in slide-in-from-top-2 duration-300 shadow-sm backdrop-blur-md">
+                  <p className="text-sm font-bold text-blue-800 dark:text-blue-400 mb-2 flex items-center gap-2">
+                    <BookOpen className="w-4 h-4" /> Explicación:
                   </p>
-                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                  <p className="text-sm text-blue-700 dark:text-blue-300 leading-relaxed">
                     {pregunta.sustento}
                   </p>
                 </div>
@@ -262,11 +314,11 @@ export function QuestionCard({
                 <div className="flex justify-start animate-in fade-in slide-in-from-top-2 duration-300">
                   <Button
                     variant="outline"
-                    className="gap-2 border-blue-500 text-blue-600 hover:bg-blue-50"
+                    className="gap-2 border-blue-500 text-blue-600 hover:bg-blue-50/50 backdrop-blur-sm"
                     onClick={() => setShowImageDialog(true)}
                   >
                     <Eye className="w-4 h-4" />
-                    Ver Explicacion
+                    Ver Explicacion Gráfica
                   </Button>
                 </div>
               )}
@@ -280,8 +332,8 @@ export function QuestionCard({
         <AlertDialogHeader>
           <AlertDialogTitle></AlertDialogTitle>
         </AlertDialogHeader>
-        <AlertDialogContent className="max-w-3xl">
-          <div className="flex flex-col items-center justify-center p-0 h-[80vh] w-full bg-slate-50/50 dark:bg-slate-900/50 rounded-md overflow-hidden relative">
+        <AlertDialogContent className="max-w-3xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-white/20">
+          <div className="flex flex-col items-center justify-center p-0 h-[80vh] w-full bg-slate-50/50 dark:bg-slate-900/50 rounded-lg overflow-hidden relative">
             <TransformWrapper
               initialScale={1}
               minScale={0.5}
