@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import toast from "react-hot-toast";
 import type { RespuestaUsuario, PreguntaUI } from "@/types/pregunta";
 import { QuestionCard } from "@/components/question-card";
 import { Button } from "@/components/ui/button";
@@ -150,6 +151,8 @@ export default function PruebaPage() {
       newIndex: number,
       newTimeLeft: number,
     ) => {
+      // MEMORY ONLY: Do not save to localStorage
+      /*
       saveActiveSession({
         tipo: "general",
         area: null,
@@ -159,6 +162,7 @@ export default function PruebaPage() {
         timeLeft: newTimeLeft,
         timestamp: Date.now(),
       });
+      */
     },
     [],
   );
@@ -181,7 +185,8 @@ export default function PruebaPage() {
     return () => clearInterval(interval);
   }, [loading, preguntas.length]);
 
-  // Persist session periodically
+  // MEMORY ONLY: Disable persistence to avoid saving questions to localStorage
+  /*
   useEffect(() => {
     if (loading || preguntas.length === 0) return;
     const timerSave = setInterval(() => {
@@ -196,6 +201,20 @@ export default function PruebaPage() {
     timeLeft,
     persistSession,
   ]);
+  */
+
+  // Add warning on reload/close
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (preguntas.length > 0 && respuestas.length < preguntas.length) {
+        e.preventDefault();
+        e.returnValue = ""; // Standard for modern browsers
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [preguntas.length, respuestas.length]);
 
   // Format seconds to HH:MM:SS
   const formatTime = (seconds: number) => {
@@ -227,11 +246,34 @@ export default function PruebaPage() {
             // Limpiar sesión local antigua para evitar conflictos
             clearActiveSession("general", null);
 
+            // Sync userCode if present in file
+            if (parsed.userCode) {
+              localStorage.setItem("user_code", parsed.userCode);
+            }
+
+            // MEMORY ONLY: Clear the source data from storage
+            // Delayed to avoid "Session Expired" in React Strict Mode (Dev) where effects run twice
+            setTimeout(() => {
+              sessionStorage.removeItem("session_test_data");
+            }, 2000);
+
             setLoading(false);
             return;
           } catch (e) {
             console.error("Error parsing session data", e);
+            toast.error("Error al procesar el archivo. Intente nuevamente.");
+            router.push("/");
+            return;
           }
+        } else {
+          // STRICT MODE: If retry is requested but data is gone (e.g. refresh in memory-only mode),
+          // do NOT fall back to generating a new test. Force user to re-upload.
+          console.warn("Retry requested but no session data found.");
+          toast.error(
+            "Sesión expirada. Por favor cargue el archivo nuevamente.",
+          );
+          router.push("/");
+          return;
         }
       }
 
@@ -341,10 +383,15 @@ export default function PruebaPage() {
 
   const handleDownload = async () => {
     try {
+      const userCode =
+        localStorage.getItem("user_code") ||
+        sessionStorage.getItem("user_code");
+
       const dataToEncrypt = {
         preguntas,
         tipo: "general", // Force general as strictly required
         timestamp: Date.now(),
+        userCode, // Include user code in the encrypted file
       };
 
       const encrypted = await encryptData(dataToEncrypt);

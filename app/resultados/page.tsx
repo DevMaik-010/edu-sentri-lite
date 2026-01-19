@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { addToReviewQueue } from "@/lib/local-storage";
 import { encryptData } from "@/lib/crypto";
+import { actualizarPuntaje } from "@/services/codigo";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -83,7 +84,7 @@ export default function ResultadosPage() {
           tipo,
           area,
           disciplina,
-        })
+        }),
       );
 
       // Limpiar localStorage temporal
@@ -154,6 +155,14 @@ export default function ResultadosPage() {
 
     if (porcentaje >= 70) {
       setTimeout(() => setShowConfetti(true), 500);
+    }
+
+    // Actualizar puntaje en base de datos si existe código
+    const userCode = localStorage.getItem("user_code");
+    if (userCode) {
+      actualizarPuntaje(userCode, Math.round(porcentaje)).catch((err) =>
+        console.error("Error updating score:", err),
+      );
     }
   }, [router]);
 
@@ -267,7 +276,7 @@ export default function ResultadosPage() {
     if (config.tipo === "practica") {
       // Para práctica, redirigir a la configuración de práctica
       return `/estudiar/practica?area=${encodeURIComponent(
-        config.area || "Comprensión Lectora"
+        config.area || "Comprensión Lectora",
       )}`;
     }
 

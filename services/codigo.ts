@@ -14,7 +14,7 @@ export interface CodigoIntento {
  * Retorna el objeto del intento si es válido, o null si no.
  */
 export async function validarCodigo(
-  codigo: string
+  codigo: string,
 ): Promise<CodigoIntento | null> {
   const { data, error } = await supabase
     .from("intentos_codigo")
@@ -44,7 +44,7 @@ export async function validarCodigo(
  */
 export async function registrarInicio(
   codigo: string,
-  nombre: string
+  nombre: string,
 ): Promise<boolean> {
   const { error } = await supabase
     .from("intentos_codigo")
@@ -53,6 +53,26 @@ export async function registrarInicio(
 
   if (error) {
     console.error("Error registrando inicio de usuario:", error);
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Actualiza el puntaje del usuario al finalizar la prueba.
+ */
+export async function actualizarPuntaje(
+  codigo: string,
+  puntaje: number,
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("intentos_codigo")
+    .update({ puntaje: puntaje })
+    .eq("codigo", codigo);
+
+  if (error) {
+    console.error("Error actualizando puntaje:", error);
     return false;
   }
 

@@ -124,7 +124,7 @@ export function QuestionCard({
         {/* 🔝 HEADER (FIJO) */}
         <CardHeader
           className={cn(
-            "m-0 p-0 shrink-0 pb-6 rounded-2xl shadow-sm border transition-colors duration-500",
+            "m-0 p-0 shrink-0 pb-6 rounded-2xl shadow-sm border-0 transition-colors duration-500",
             themeClasses?.glass ||
               "bg-white/40 backdrop-blur-md border-white/50",
           )}

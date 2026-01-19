@@ -103,7 +103,8 @@ export default function HomePage() {
         return;
       }
 
-      // 3. Guardar sesión local
+      // 3. Guardar sesión local (localStorage como solicitó el usuario)
+      localStorage.setItem("user_code", formData.codigo.trim());
       sessionStorage.setItem("user_name", formData.nombre.trim());
       sessionStorage.setItem("user_code", formData.codigo.trim());
 
