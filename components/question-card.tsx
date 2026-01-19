@@ -187,11 +187,8 @@ export function QuestionCard({
                     className={cn(
                       " group relative flex items-center space-x-3 p-4 rounded-xl border transition-all duration-300 cursor-pointer overflow-hidden backdrop-blur-sm",
                       esSeleccionada
-                        ? cn(
-                            themeClasses?.glass,
-                            "ring-1 ring-offset-0",
-                          )
-                        : "bg-white border-slate-400 hover:bg-white/60 hover:border-slate-600 hover:shadow-sm",
+                        ? cn(themeClasses?.glass, "ring-1 ring-offset-0")
+                        : "hover:border-black border-2 hover:shadow-sm bg-white",
                     )}
                   >
                     {/* Background indicator for selection */}
@@ -219,16 +216,8 @@ export function QuestionCard({
                       className={cn(
                         "flex-1 cursor-pointer text-sm sm:text-base leading-relaxed z-10 transition-all",
                         esSeleccionada
-                          ? cn(
-                              "font-bold",
-                              theme === "night"
-                                ? "text-slate-100"
-                                : "text-slate-800",
-                            )
-                          : "font-medium text-slate-700 dark:text-slate-300",
-                        theme === "night" &&
-                          !esSeleccionada &&
-                          "text-slate-300",
+                          ? cn("font-bold text-slate-900")
+                          : "font-medium text-slate-700",
                       )}
                     >
                       {opcion.texto}

@@ -215,7 +215,7 @@ export default function HomePage() {
           <InstallPrompt />
 
           <a
-            href="https://wa.me/59169401617?text=Hola,%20tengo%20problemas%20con%20mi%20código%20de%20acceso."
+            href="https://wa.me/59175980130?text=Hola,%20quiero%20solicitar%20mi%20codigo%20gratis."
             target="_blank"
             rel="noopener noreferrer"
             className="block"
@@ -223,15 +223,16 @@ export default function HomePage() {
             <Button
               variant="outline"
               className="
+              cursor-pointer
               w-full gap-2
               bg-transparent hover:bg-white/5
               text-slate-300 hover:text-white
-              border-slate-700/50 hover:border-slate-600
               transition-all
+              border-green-500 hover:border-green-500 
             "
             >
               <MessageCircle className="w-4 h-4 text-green-500" />
-              Soporte por WhatsApp
+              Solicitar Código <span className="text-green-500">(Gratis)</span>
             </Button>
           </a>
 
@@ -245,7 +246,7 @@ export default function HomePage() {
             />
             <Button
               variant="ghost"
-              className="w-full text-white hover:text-slate-300 hover:bg-white/5 text-sm border border-white hover:border-white/20 transition-all"
+              className="cursor-pointer w-full text-white hover:text-slate-300 hover:bg-white/5 text-sm border border-white hover:border-white/20 transition-all"
               onClick={() => document.getElementById("upload-test")?.click()}
               disabled={loading}
             >

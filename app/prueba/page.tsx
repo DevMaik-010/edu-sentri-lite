@@ -51,10 +51,10 @@ const THEMES = {
       backgroundSize: "30px 30px",
       backgroundColor: "#EAF6FF",
     },
-    accent: "text-[#0284C7]", // Darker blue for text readability
+    accent: "text-[#0284C7]", // Darker blue
     accentBorder: "border-[#7EC8E3]",
-    glass: "bg-white/60 backdrop-blur-md border border-white/60 shadow-lg",
-    text: "text-slate-800",
+    glass: "bg-white/70 backdrop-blur-md border border-white/40 shadow-xl", // Light Glass
+    text: "text-slate-900", // Dark text
     button:
       "bg-gradient-to-r from-[#38BDF8] to-[#0284C7] text-white hover:opacity-90 shadow-md transform transition-all duration-200 hover:scale-[1.02]",
     buttonOutline:
@@ -73,10 +73,10 @@ const THEMES = {
       backgroundSize: "30px 30px",
       backgroundColor: "#FFF1E6",
     },
-    accent: "text-[#D97706]", // Darker orange for text
+    accent: "text-[#D97706]", // Darker orange
     accentBorder: "border-[#FF9F68]",
-    glass: "bg-white/60 backdrop-blur-md border border-white/60 shadow-lg",
-    text: "text-amber-950",
+    glass: "bg-white/70 backdrop-blur-md border border-white/40 shadow-xl", // Light Glass
+    text: "text-slate-900", // Dark text
     button:
       "bg-gradient-to-r from-[#F97316] to-[#EA580C] text-white hover:opacity-90 shadow-md transform transition-all duration-200 hover:scale-[1.02]",
     buttonOutline:
@@ -97,14 +97,14 @@ const THEMES = {
     },
     accent: "text-[#38BDF8]",
     accentBorder: "border-[#38BDF8]",
-    glass: "bg-[#1E293B]/70 backdrop-blur-md border border-white/10 shadow-xl",
-    text: "text-[#E5E7EB]",
+    glass: "bg-white/90 backdrop-blur-md border border-white/40 shadow-xl", // High opacity light glass for contrast against dark background
+    text: "text-slate-900", // Dark text needed on light card
     button:
       "bg-gradient-to-r from-[#38BDF8] to-[#0284C7] text-white hover:opacity-90 shadow-[0_0_15px_rgba(56,189,248,0.3)] transform transition-all duration-200 hover:scale-[1.02]",
     buttonOutline:
-      "border-[#38BDF8] text-[#38BDF8] hover:bg-[#38BDF8]/10 bg-slate-900/40 backdrop-blur-sm",
-    progress: "bg-[#38BDF8]",
-    progressBg: "bg-[#38BDF8]/20",
+      "border-[#38BDF8] text-[#38BDF8] hover:bg-[#38BDF8]/10 bg-slate-900/40 backdrop-blur-sm hover:text-[#38BDF8]",
+    progress: "bg-[#130D2E]",
+    progressBg: "bg-[#130D2E]/20",
   },
 };
 
@@ -430,7 +430,7 @@ export default function PruebaPage() {
         <div className=" sm:mb-6 animate-in fade-in slide-in-from-top-1 duration-500 shrink-0">
           <div className="flex flex-col gap-2">
             <div
-              className={`text-center font-mono font-bold text-xl drop-shadow-sm ${
+              className={`text-center font-mono font-bold text-xl drop-shadow-sm text-white ${
                 timeLeft < 300 ? "text-red-500 animate-pulse" : theme.text
               }`}
             >
@@ -439,7 +439,7 @@ export default function PruebaPage() {
             {/* PROGRESO */}
             <div
               className={cn(
-                "mb-4 sm:mb-6 shrink-0 rounded-2xl p-4 transition-all duration-300",
+                "mb-4 sm:mb-6 shrink-0 rounded-2xl p-4 transition-all duration-300 ",
                 theme.glass,
               )}
             >
@@ -451,7 +451,7 @@ export default function PruebaPage() {
 
               <div
                 className={cn(
-                  "flex justify-between mt-2 text-sm font-medium items-center",
+                  "flex justify-between mt-2 text-sm font-bold items-center",
                   theme.text,
                 )}
               >
