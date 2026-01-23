@@ -214,29 +214,6 @@ export default function HomePage() {
         {/* ACCIONES EXTRA */}
         <div className="mt-8 space-y-4">
           <InstallPrompt />
-
-          <a
-            href="https://wa.me/59175980130?text=Hola,%20quiero%20solicitar%20mi%20codigo%20gratis."
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block"
-          >
-            <Button
-              variant="outline"
-              className="
-              cursor-pointer
-              w-full gap-2
-              bg-transparent hover:bg-white/5
-              text-slate-300 hover:text-white
-              transition-all
-              border-green-500 hover:border-green-500 
-            "
-            >
-              <MessageCircle className="w-4 h-4 text-green-500" />
-              Solicitar Código <span className="text-green-500">(Gratis)</span>
-            </Button>
-          </a>
-
           <div className="pt-4 border-t border-slate-800/50">
             <input
               type="file"
