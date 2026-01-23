@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Loader2, MessageCircle, Upload } from "lucide-react";
+import { ArrowRight, Loader2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,8 +12,23 @@ import { validarCodigo, registrarInicio } from "@/services/codigo";
 import { clearActiveSession } from "@/lib/local-storage";
 import { InstallPrompt } from "@/components/install-prompt";
 import { decryptData } from "@/lib/crypto";
+import { v4 as uuidv4 } from "uuid";
 
 import toast from "react-hot-toast";
+
+// Función para obtener o generar el ID único del dispositivo
+// Solo se ejecuta en el cliente
+const getOrCreateDeviceId = (): string => {
+  if (typeof window === "undefined") return "";
+
+  const existingId = localStorage.getItem("device_id");
+  if (existingId) {
+    return existingId;
+  }
+  const newId = uuidv4();
+  localStorage.setItem("device_id", newId);
+  return newId;
+};
 
 export default function HomePage() {
   const router = useRouter();
@@ -38,6 +53,16 @@ export default function HomePage() {
         !Array.isArray(decrypted.preguntas)
       ) {
         throw new Error("Formato de archivo inválido");
+      }
+
+      // Verificar que el archivo pertenece a este dispositivo
+      const currentDeviceId = localStorage.getItem("device_id");
+      if (decrypted.deviceId && decrypted.deviceId !== currentDeviceId) {
+        toast.error(
+          "Este archivo no pertenece a este dispositivo. No puede ser compartido entre dispositivos.",
+        );
+        setLoading(false);
+        return;
       }
 
       // Clear any existing active session to force a fresh start
@@ -103,12 +128,16 @@ export default function HomePage() {
         return;
       }
 
-      // 3. Guardar sesión local (localStorage como solicitó el usuario)
+      // 3. Generar y guardar el ID único del dispositivo
+      const deviceId = getOrCreateDeviceId();
+      console.log("Device ID generado/recuperado:", deviceId);
+
+      // 4. Guardar sesión local (localStorage como solicitó el usuario)
       localStorage.setItem("user_code", formData.codigo.trim());
       sessionStorage.setItem("user_name", formData.nombre.trim());
       sessionStorage.setItem("user_code", formData.codigo.trim());
 
-      // 4. Redirigir a la prueba general
+      // 5. Redirigir a la prueba general
       toast.success("¡Acceso concedido!");
 
       router.push("/prueba?tipo=general&download=true");

@@ -18,6 +18,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type FilterType = "all" | "correct" | "incorrect" | "area";
 
@@ -71,11 +72,11 @@ export default function RevisionPage() {
 
   const preguntasConRespuestas = preguntas.map((pregunta) => {
     const respuestaUsuario = respuestas.find(
-      (r) => r.preguntaId === pregunta.id
+      (r) => r.preguntaId === pregunta.id,
     );
     const opcionCorrecta = pregunta.opciones.find((o) => o.es_correcta);
     const opcionUsuario = pregunta.opciones.find(
-      (o) => o.clave === respuestaUsuario?.respuestaSeleccionada
+      (o) => o.clave === respuestaUsuario?.respuestaSeleccionada,
     );
     const esCorrecta = opcionUsuario?.es_correcta || false;
 
@@ -98,7 +99,7 @@ export default function RevisionPage() {
   const porArea: { [key: string]: { correctas: number; total: number } } = {};
   preguntas.forEach((pregunta) => {
     const respuestaUsuario = respuestas.find(
-      (r) => r.preguntaId === pregunta.id
+      (r) => r.preguntaId === pregunta.id,
     );
     const opcionCorrecta = pregunta.opciones.find((o) => o.es_correcta);
     const esCorrecta =
@@ -596,7 +597,7 @@ export default function RevisionPage() {
             }
           </div>
         </div>
-      `
+      `,
         )
         .join("")}
     </div>
@@ -627,13 +628,13 @@ export default function RevisionPage() {
         printWindow.document.close();
       } else {
         alert(
-          "No se pudo abrir la ventana de impresión. Por favor, permite las ventanas emergentes."
+          "No se pudo abrir la ventana de impresión. Por favor, permite las ventanas emergentes.",
         );
       }
     } catch (error) {
       console.error("Error al generar reporte:", error);
       alert(
-        "Hubo un error al generar el reporte. Por favor, intenta nuevamente."
+        "Hubo un error al generar el reporte. Por favor, intenta nuevamente.",
       );
     } finally {
       setIsGeneratingPDF(false);
@@ -668,24 +669,27 @@ export default function RevisionPage() {
                 </p>
               </div>
             </div>
-            <Button
-              onClick={generarReporte}
-              size="lg"
-              disabled={isGeneratingPDF}
-              className="gap-2 bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isGeneratingPDF ? (
-                <>
-                  <div className="inline-block animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                  Generando PDF...
-                </>
-              ) : (
-                <>
-                  <FileText className="w-5 h-5" />
-                  Generar Reporte
-                </>
-              )}
-            </Button>
+            <div className="flex items-center gap-3">
+              <ThemeToggle />
+              <Button
+                onClick={generarReporte}
+                size="lg"
+                disabled={isGeneratingPDF}
+                className="gap-2 bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGeneratingPDF ? (
+                  <>
+                    <div className="inline-block animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                    Generando PDF...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="w-5 h-5" />
+                    Generar Reporte
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -808,8 +812,8 @@ export default function RevisionPage() {
                               area.porcentaje >= 80
                                 ? "text-green-600"
                                 : area.porcentaje >= 60
-                                ? "text-yellow-600"
-                                : "text-orange-600"
+                                  ? "text-yellow-600"
+                                  : "text-orange-600"
                             }`}
                           >
                             {area.porcentaje.toFixed(0)}%

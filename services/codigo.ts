@@ -78,3 +78,33 @@ export async function actualizarPuntaje(
 
   return true;
 }
+
+export interface RankingUser {
+  id: string;
+  nombre: string;
+  puntaje: number;
+  creado: string;
+}
+
+/**
+ * Obtiene el ranking de usuarios ordenado por puntaje descendente.
+ * Solo retorna usuarios con puntaje > 0 y nombre no nulo.
+ */
+export async function obtenerRanking(
+  limit: number = 50,
+): Promise<RankingUser[]> {
+  const { data, error } = await supabase
+    .from("intentos_codigo")
+    .select("id, nombre, puntaje, creado")
+    .not("nombre", "is", null)
+    .gt("puntaje", 0)
+    .order("puntaje", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("Error obteniendo ranking:", error);
+    return [];
+  }
+
+  return (data || []) as RankingUser[];
+}

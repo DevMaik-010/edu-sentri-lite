@@ -37,8 +37,6 @@ interface QuestionCardProps {
   onSeleccionarRespuesta?: (respuesta: string) => void;
   mostrarRespuesta?: boolean;
   mostrarCorrecta?: boolean;
-  theme?: "morning" | "afternoon" | "night";
-  themeClasses?: Record<string, any>;
 }
 
 type ColoresPorArea = {
@@ -81,8 +79,6 @@ export function QuestionCard({
   onSeleccionarRespuesta,
   mostrarRespuesta = false,
   mostrarCorrecta = false,
-  theme = "morning",
-  themeClasses,
 }: QuestionCardProps) {
   const handleChange = (value: string) => {
     if (onRespuesta) onRespuesta(value);
@@ -124,9 +120,8 @@ export function QuestionCard({
         {/* 🔝 HEADER (FIJO) */}
         <CardHeader
           className={cn(
-            "m-0 p-0 shrink-0 pb-6 rounded-2xl shadow-sm border-0 transition-colors duration-500",
-            themeClasses?.glass ||
-              "bg-white/40 backdrop-blur-md border-white/50",
+            "m-0 p-0 shrink-0 pb-6 rounded-2xl shadow-lg transition-colors duration-500",
+            "bg-white dark:bg-slate-800 backdrop-blur-md border border-slate-200 dark:border-slate-700",
           )}
         >
           <div
@@ -141,8 +136,7 @@ export function QuestionCard({
             <div className="flex items-center justify-between px-6 mt-4">
               <span
                 className={cn(
-                  "text-xs font-semibold uppercase tracking-wider opacity-70",
-                  themeClasses?.text,
+                  "text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400",
                 )}
               >
                 Pregunta {numeroActual} / {total}
@@ -161,8 +155,7 @@ export function QuestionCard({
 
           <h2
             className={cn(
-              "text-lg sm:text-xl font-bold leading-relaxed px-6 mt-3",
-              themeClasses?.text,
+              "text-lg sm:text-xl font-bold leading-relaxed px-6 mt-3 text-slate-800 dark:text-white",
             )}
           >
             {pregunta.num_pregunta}. {pregunta.enunciado}
@@ -179,35 +172,25 @@ export function QuestionCard({
             {opcionesBarajadas.map((opcion, index) => {
               const esSeleccionada = respuestaSeleccionada === opcion.clave;
 
-              // Si NO se deben mostrar respuestas, usar estilo neutro con Glassmorphism
+              // Si NO se deben mostrar respuestas, usar estilo neutro
               if (!mostrar) {
                 return (
                   <div
                     key={index}
                     className={cn(
-                      " group relative flex items-center space-x-3 p-4 rounded-xl border transition-all duration-300 cursor-pointer overflow-hidden backdrop-blur-sm",
+                      "group relative flex items-center space-x-3 p-4 rounded-xl border-2 transition-all duration-300 cursor-pointer overflow-hidden",
                       esSeleccionada
-                        ? cn(themeClasses?.glass, "ring-1 ring-offset-0")
-                        : "hover:border-black border-2 hover:shadow-sm bg-white",
+                        ? "bg-blue-50 dark:bg-blue-900/30 border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800"
+                        : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 hover:border-blue-400 hover:shadow-md",
                     )}
                   >
-                    {/* Background indicator for selection */}
-                    {esSeleccionada && (
-                      <div
-                        className={cn(
-                          "absolute inset-0 opacity-10",
-                          themeClasses?.glass,
-                        )}
-                      />
-                    )}
-
                     <RadioGroupItem
                       value={opcion.clave}
                       id={`opcion-${index}`}
                       className={cn(
-                        "shrink-0 z-10 border-[1.5px] size-5",
+                        "shrink-0 z-10 border-2 size-5",
                         esSeleccionada
-                          ? cn(themeClasses?.accentBorder, "border-2")
+                          ? "border-blue-500 text-blue-500"
                           : "border-slate-400 dark:border-slate-500",
                       )}
                     />
@@ -216,8 +199,8 @@ export function QuestionCard({
                       className={cn(
                         "flex-1 cursor-pointer text-sm sm:text-base leading-relaxed z-10 transition-all",
                         esSeleccionada
-                          ? cn("font-bold text-slate-900")
-                          : "font-medium text-slate-700",
+                          ? "font-bold text-blue-700 dark:text-blue-300"
+                          : "font-medium text-slate-700 dark:text-slate-300",
                       )}
                     >
                       {opcion.texto}

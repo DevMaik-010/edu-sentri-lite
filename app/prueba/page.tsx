@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import type { RespuestaUsuario, PreguntaUI } from "@/types/pregunta";
@@ -17,11 +17,7 @@ import {
 import { obtenerPreguntasGenerales } from "@/services/preguntas";
 import { encryptData } from "@/lib/crypto";
 import { LoadingLottie } from "@/components/loading-lottie";
-import {
-  getActiveSession,
-  saveActiveSession,
-  clearActiveSession,
-} from "@/lib/local-storage";
+import { getActiveSession, clearActiveSession } from "@/lib/local-storage";
 import { obtenerTextoLecturaPorId } from "@/services/textos-lectura";
 import type { TextoLectura } from "@/types/textos-lectura";
 import ReactMarkdown from "react-markdown";
@@ -36,77 +32,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
 
-// Theme Configuration
-type TimeTheme = "morning" | "afternoon" | "night";
-
-const THEMES = {
-  morning: {
-    background: "bg-[#EAF6FF]", // Fallback
-    pattern: "cross-grid",
-    style: {
-      backgroundImage: `
-        linear-gradient(90deg, transparent 48%, rgba(126, 200, 227, 0.25) 48%, rgba(126, 200, 227, 0.25) 52%, transparent 52%),
-        linear-gradient(transparent 48%, rgba(126, 200, 227, 0.25) 48%, rgba(126, 200, 227, 0.25) 52%, transparent 52%)
-      `,
-      backgroundSize: "30px 30px",
-      backgroundColor: "#EAF6FF",
-    },
-    accent: "text-[#0284C7]", // Darker blue
-    accentBorder: "border-[#7EC8E3]",
-    glass: "bg-white/70 backdrop-blur-md border border-white/40 shadow-xl", // Light Glass
-    text: "text-slate-900", // Dark text
-    button:
-      "bg-gradient-to-r from-[#38BDF8] to-[#0284C7] text-white hover:opacity-90 shadow-md transform transition-all duration-200 hover:scale-[1.02]",
-    buttonOutline:
-      "border-[#0284C7] text-[#0284C7] hover:bg-[#0284C7]/10 bg-white/40 backdrop-blur-sm",
-    progress: "bg-[#0284C7]",
-    progressBg: "bg-[#7EC8E3]/20",
-  },
-  afternoon: {
-    background: "bg-[#FFF1E6]", // Fallback
-    pattern: "cross-grid",
-    style: {
-      backgroundImage: `
-        linear-gradient(90deg, transparent 48%, rgba(255, 214, 165, 0.25) 48%, rgba(255, 214, 165, 0.25) 52%, transparent 52%),
-        linear-gradient(transparent 48%, rgba(255, 214, 165, 0.25) 48%, rgba(255, 214, 165, 0.25) 52%, transparent 52%)
-      `,
-      backgroundSize: "30px 30px",
-      backgroundColor: "#FFF1E6",
-    },
-    accent: "text-[#D97706]", // Darker orange
-    accentBorder: "border-[#FF9F68]",
-    glass: "bg-white/70 backdrop-blur-md border border-white/40 shadow-xl", // Light Glass
-    text: "text-slate-900", // Dark text
-    button:
-      "bg-gradient-to-r from-[#F97316] to-[#EA580C] text-white hover:opacity-90 shadow-md transform transition-all duration-200 hover:scale-[1.02]",
-    buttonOutline:
-      "border-[#EA580C] text-[#EA580C] hover:bg-[#EA580C]/10 bg-white/40 backdrop-blur-sm",
-    progress: "bg-[#EA580C]",
-    progressBg: "bg-[#FF9F68]/20",
-  },
-  night: {
-    background: "bg-[#0F172A]", // Fallback
-    pattern: "cross-grid",
-    style: {
-      backgroundImage: `
-        linear-gradient(90deg, transparent 48%, rgba(56, 189, 248, 0.1) 48%, rgba(56, 189, 248, 0.1) 52%, transparent 52%),
-        linear-gradient(transparent 48%, rgba(56, 189, 248, 0.1) 48%, rgba(56, 189, 248, 0.1) 52%, transparent 52%)
-      `,
-      backgroundSize: "30px 30px",
-      backgroundColor: "#0F172A",
-    },
-    accent: "text-[#38BDF8]",
-    accentBorder: "border-[#38BDF8]",
-    glass: "bg-white/90 backdrop-blur-md border border-white/40 shadow-xl", // High opacity light glass for contrast against dark background
-    text: "text-slate-900", // Dark text needed on light card
-    button:
-      "bg-gradient-to-r from-[#38BDF8] to-[#0284C7] text-white hover:opacity-90 shadow-[0_0_15px_rgba(56,189,248,0.3)] transform transition-all duration-200 hover:scale-[1.02]",
-    buttonOutline:
-      "border-[#38BDF8] text-[#38BDF8] hover:bg-[#38BDF8]/10 bg-slate-900/40 backdrop-blur-sm hover:text-[#38BDF8]",
-    progress: "bg-[#130D2E]",
-    progressBg: "bg-[#130D2E]/20",
-  },
+// Theme Configuration - Soporta modo claro y oscuro
+const theme = {
+  glass:
+    "bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border border-white/50 dark:border-slate-700/50 shadow-xl",
+  text: "text-slate-800 dark:text-slate-200",
+  button:
+    "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-400 hover:to-blue-500 shadow-lg shadow-blue-500/30 transform transition-all duration-200 hover:scale-[1.02]",
+  buttonOutline:
+    "border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-400/10 bg-white/80 dark:bg-slate-800/60 backdrop-blur-sm",
+  progress: "bg-blue-500",
+  progressBg: "bg-slate-200 dark:bg-blue-500/20",
 };
 
 export default function PruebaPage() {
@@ -117,18 +55,6 @@ export default function PruebaPage() {
   const [preguntaActual, setPreguntaActual] = useState(0);
   const [respuestas, setRespuestas] = useState<RespuestaUsuario[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Theme State
-  const [currentTheme, setCurrentTheme] = useState<TimeTheme>("morning");
-
-  useEffect(() => {
-    const hour = new Date().getHours();
-    if (hour >= 6 && hour < 12) setCurrentTheme("morning");
-    else if (hour >= 12 && hour < 19) setCurrentTheme("afternoon");
-    else setCurrentTheme("night");
-  }, []);
-
-  const theme = THEMES[currentTheme];
 
   // States for reading comprehension text
   const [showTextoDialog, setShowTextoDialog] = useState(false);
@@ -142,30 +68,6 @@ export default function PruebaPage() {
 
   // Timer state (2 hours = 7200 seconds)
   const [timeLeft, setTimeLeft] = useState(7200);
-
-  // Helper to save session state
-  const persistSession = useCallback(
-    (
-      newPreguntas: PreguntaUI[],
-      newRespuestas: RespuestaUsuario[],
-      newIndex: number,
-      newTimeLeft: number,
-    ) => {
-      // MEMORY ONLY: Do not save to localStorage
-      /*
-      saveActiveSession({
-        tipo: "general",
-        area: null,
-        preguntas: newPreguntas,
-        respuestas: newRespuestas,
-        preguntaActual: newIndex,
-        timeLeft: newTimeLeft,
-        timestamp: Date.now(),
-      });
-      */
-    },
-    [],
-  );
 
   // Save timer every 10 seconds to avoid excessive writing
   useEffect(() => {
@@ -300,7 +202,6 @@ export default function PruebaPage() {
         const initialTime = 7200; // 2 horas en segundos 7200, 1 min 60
 
         setTimeLeft(initialTime);
-        persistSession(preguntasCargadas, [], 0, initialTime);
       } catch (error) {
         console.error("Error al cargar preguntas:", error);
       } finally {
@@ -309,7 +210,7 @@ export default function PruebaPage() {
     };
 
     cargarPreguntas();
-  }, [persistSession]);
+  }, []);
 
   // Effect to load text when question changes
   useEffect(() => {
@@ -356,14 +257,12 @@ export default function PruebaPage() {
       respuestaSeleccionada: respuesta,
     });
     setRespuestas(respuestasActualizadas);
-    persistSession(preguntas, respuestasActualizadas, preguntaActual, timeLeft);
   };
 
   const handleAnterior = () => {
     if (preguntaActual > 0) {
       const newIndex = preguntaActual - 1;
       setPreguntaActual(newIndex);
-      persistSession(preguntas, respuestas, newIndex, timeLeft);
     }
   };
 
@@ -371,13 +270,11 @@ export default function PruebaPage() {
     if (preguntaActual < preguntas.length - 1) {
       const newIndex = preguntaActual + 1;
       setPreguntaActual(newIndex);
-      persistSession(preguntas, respuestas, newIndex, timeLeft);
     }
   };
 
   const handleGoToQuestion = (index: number) => {
     setPreguntaActual(index);
-    persistSession(preguntas, respuestas, index, timeLeft);
     setShowNavigatorDialog(false);
   };
 
@@ -387,11 +284,15 @@ export default function PruebaPage() {
         localStorage.getItem("user_code") ||
         sessionStorage.getItem("user_code");
 
+      // Obtener el ID del dispositivo para vincularlo al archivo
+      const deviceId = localStorage.getItem("device_id");
+
       const dataToEncrypt = {
         preguntas,
         tipo: "general", // Force general as strictly required
         timestamp: Date.now(),
         userCode, // Include user code in the encrypted file
+        deviceId, // Include device ID to prevent file sharing between devices
       };
 
       const encrypted = await encryptData(dataToEncrypt);
@@ -410,15 +311,25 @@ export default function PruebaPage() {
     }
   };
 
-  // Auto-download effect
+  // Auto-download effect - Solo descarga una vez
   const downloadedRef = useRef(false);
   useEffect(() => {
     const shouldDownload = searchParams?.get("download") === "true";
-    if (shouldDownload && preguntas.length > 0 && !downloadedRef.current) {
+    const alreadyDownloaded =
+      localStorage.getItem("intento_descargado") === "descargado";
+
+    if (
+      shouldDownload &&
+      preguntas.length > 0 &&
+      !downloadedRef.current &&
+      !alreadyDownloaded
+    ) {
       downloadedRef.current = true;
-      // Small delay to ensure state is settled? Not strictly necessary but safe.
+      // Small delay to ensure state is settled
       setTimeout(() => {
         handleDownload();
+        // Marcar como descargado en localStorage
+        localStorage.setItem("intento_descargado", "descargado");
       }, 500);
     }
   }, [preguntas, searchParams]);
@@ -467,64 +378,79 @@ export default function PruebaPage() {
   return (
     <div
       className={cn(
-        "min-h-screen flex flex-col transition-colors duration-1000",
-        theme.background,
+        "min-h-screen flex flex-col transition-colors duration-300",
+        "bg-slate-100 dark:bg-slate-900",
       )}
-      style={theme.style}
     >
       <div className="container h-screen mx-auto px-4 py-4 sm:py-8 flex flex-col">
-        {/* 🔝 PROGRESO (FIJO ARRIBA) */}
-        <div className=" sm:mb-6 animate-in fade-in slide-in-from-top-1 duration-500 shrink-0">
-          <div className="flex flex-col gap-2">
-            <div
-              className={`text-center font-mono font-bold text-xl drop-shadow-sm text-white ${
-                timeLeft < 300 ? "text-red-500 animate-pulse" : theme.text
-              }`}
-            >
-              {formatTime(timeLeft)}
-            </div>
-            {/* PROGRESO */}
+        {/* 🔝 HEADER - Timer centrado y progreso */}
+        <div className="sm:mb-6 animate-in fade-in slide-in-from-top-1 duration-500 shrink-0">
+          {/* Timer Centrado - Colores Azules Oscuros */}
+          <div className="flex justify-center items-center gap-4 mb-4">
             <div
               className={cn(
-                "mb-4 sm:mb-6 shrink-0 rounded-2xl p-4 transition-all duration-300 ",
-                theme.glass,
+                "inline-flex items-center gap-3 px-6 py-3 rounded-full backdrop-blur-md border shadow-lg transition-all duration-300",
+                timeLeft < 300
+                  ? "bg-red-100 dark:bg-red-500/10 border-red-300 text-red-600 animate-pulse shadow-red-200"
+                  : "bg-white dark:bg-slate-800/90 border-slate-300 dark:border-slate-600 text-slate-800 dark:text-white shadow-slate-200 dark:shadow-slate-900/50",
               )}
             >
-              <Progress
-                value={progreso}
-                className={cn("h-2.5", theme.progressBg)}
-                indicatorClassName={theme.progress}
-              />
-
               <div
                 className={cn(
-                  "flex justify-between mt-2 text-sm font-bold items-center",
-                  theme.text,
+                  "w-2 h-2 rounded-full animate-pulse",
+                  timeLeft < 300 ? "bg-red-500" : "bg-blue-400",
                 )}
-              >
-                <span>Pregunta {currentIndex + 1}</span>
-                {/* Botón ver texto individual si la pregunta lo requiere */}
-                {preguntas[preguntaActual]?.texto_lectura_id && (
-                  <div className="flex justify-center">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowTextoDialog(true)}
-                      className={cn(
-                        "h-6 sm:h-8 gap-2 border text-xs font-semibold shadow-none",
-                        theme.accentBorder,
-                        theme.accent,
-                        "hover:bg-white/20 bg-transparent",
-                      )}
-                    >
-                      <Eye className="w-4 h-4" />
-                      Ver Texto
-                    </Button>
-                  </div>
-                )}
+              />
+              <span className="font-mono font-bold text-2xl tracking-wider">
+                {formatTime(timeLeft)}
+              </span>
+            </div>
+            <ThemeToggle />
+          </div>
 
-                <span>Total {preguntas.length}</span>
-              </div>
+          {/* Barra de Progreso */}
+          <div
+            className={cn(
+              "rounded-2xl p-4 transition-all duration-300",
+              theme.glass,
+            )}
+          >
+            <Progress
+              value={progreso}
+              className={cn("h-2.5", theme.progressBg)}
+              indicatorClassName={theme.progress}
+            />
+
+            <div
+              className={cn(
+                "flex justify-between mt-3 text-sm font-semibold items-center",
+                theme.text,
+              )}
+            >
+              <span className="bg-slate-200 dark:bg-slate-100/80 text-slate-700 dark:text-slate-800 px-3 py-1 rounded-full text-xs">
+                Pregunta {currentIndex + 1}
+              </span>
+
+              {/* Botón ver texto individual si la pregunta lo requiere */}
+              {preguntas[preguntaActual]?.texto_lectura_id && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowTextoDialog(true)}
+                  className={cn(
+                    "h-7 gap-2 border text-xs font-semibold shadow-none rounded-full",
+                    "border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400",
+                    "hover:bg-blue-100 dark:hover:bg-blue-400/10 bg-white/80 dark:bg-slate-800/60",
+                  )}
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  Ver Texto
+                </Button>
+              )}
+
+              <span className="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-3 py-1 rounded-full text-xs">
+                Total {preguntas.length}
+              </span>
             </div>
           </div>
         </div>
@@ -541,8 +467,6 @@ export default function PruebaPage() {
             respuestaSeleccionada={respuestaActual}
             onSeleccionarRespuesta={handleSeleccionarRespuesta}
             mostrarRespuesta={mostrarRespuesta}
-            theme={currentTheme}
-            themeClasses={theme}
           />
         </div>
 
